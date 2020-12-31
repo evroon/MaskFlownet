@@ -31,7 +31,7 @@ def find_checkpoint(checkpoint_str):
     	else:
     		prefix = checkpoint_str
     		steps = None
-    	log_file, run_id = path.find_log(prefix)	
+    	log_file, run_id = path.find_log(prefix)
     	if steps is None:
     		checkpoint, steps = path.find_checkpoints(run_id)[-1]
     	else:
@@ -69,7 +69,7 @@ def instantiate_model(gpu_device, config):
     # initiate
     pipe = get_pipeline(args.network, ctx=ctx, config=config)
     return pipe
-    
+
 
 def load_checkpoint(pipe, config, checkpoint):
     # load parameters from given checkpoint
@@ -89,7 +89,7 @@ def predict_image_pair_flow(img1, img2, pipe, resize=None):
     for result in pipe.predict([img1], [img2], batch_size = 1, resize=resize):
         flow, occ_mask, warped = result
     return flow, occ_mask, warped
-    
+
 
 def create_video_clip_from_frames(frame_list, fps):
     """ Function takes a list of video frames and puts them together in a sequence"""
@@ -100,6 +100,9 @@ def create_video_clip_from_frames(frame_list, fps):
 def predict_video_flow(video_filename, batch_size, resize=None):
     cap = cv2.VideoCapture(video_filename)
     fps = cap.get(cv2.CAP_PROP_FPS)
+
+    if fps < 2:
+        fps = 30
 
     prev_frames = []
     new_frames = []
@@ -114,7 +117,7 @@ def predict_video_flow(video_filename, batch_size, resize=None):
         prev_frames.append(frame)
     del prev_frames[-1] #delete the last frame of the video from prev_frames
     flow_video = [flow for flow, occ_mask, warped in pipe.predict(prev_frames, new_frames, batch_size=batch_size, resize=resize)]
-    
+
     return flow_video, fps
 
 
@@ -128,7 +131,7 @@ if __name__ == "__main__":
     parser.add_argument('--image_2', type=str, help='filepath of the second image')
     parser.add_argument('--video_filepath', type=str, help='filepath of the input video')
     parser.add_argument('-g', '--gpu_device', type=str, default='', help='Specify gpu device(s)')
-    parser.add_argument('-c', '--checkpoint', type=str, default=None, 
+    parser.add_argument('-c', '--checkpoint', type=str, default=None,
     	help='model checkpoint to load; by default, the latest one.'
     	'You can use checkpoint:steps to load to a specific steps')
     parser.add_argument('--clear_steps', action='store_true')
@@ -136,18 +139,18 @@ if __name__ == "__main__":
     parser.add_argument('--batch', type=int, default=8, help='minibatch size of samples per device')
     parser.add_argument('--resize', type=str, default='', help='shape to resize image frames before inference')
     parser.add_argument('--threads', type=str, default=8, help='Number of threads to use when writing flow video to file')
-    
+
     args = parser.parse_args()
-    
-    
+
+
     # Get desired image resize from the string argument
     infer_resize = [int(s) for s in args.resize.split(',')] if args.resize else None
-    
+
     checkpoint, steps = find_checkpoint(args.checkpoint)
     config = load_model(args.config)
     pipe = instantiate_model(args.gpu_device, config)
     pipe = load_checkpoint(pipe, config, checkpoint)
-    
+
     if args.image_1 is not None:
         image_1 = cv2.imread(args.image_1)
         image_2 = cv2.imread(args.image_2)
