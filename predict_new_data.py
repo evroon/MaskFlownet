@@ -66,9 +66,7 @@ def load_model(config_str):
 
 def instantiate_model(gpu_device, config):
     ctx = [mx.cpu()] if gpu_device == '' else [mx.gpu(gpu_id) for gpu_id in map(int, gpu_device.split(','))]
-    # initiate
-    pipe = get_pipeline(args.network, ctx=ctx, config=config)
-    return pipe
+    return get_pipeline(args.network, ctx=ctx, config=config)
 
 
 def load_checkpoint(pipe, config, checkpoint):
@@ -106,24 +104,37 @@ def predict_video_flow(video_filename, batch_size, resize=None):
 
     prev_frames = []
     new_frames = []
-    has_frames, frame = cap.read()
+    _, frame = cap.read()
+
+    if resize is True:
+        frame = cv2.resize(frame, (0,0), fx=0.5, fy=0.5)
+
     prev_frames.append(frame)
-    while True:
+
+    for i in range(1000, 2000):
         has_frames, frame = cap.read()
+
         if not has_frames:
             cap.release()
             break
+
+        if resize is True:
+            frame = cv2.resize(frame, (0,0), fx=0.5, fy=0.5)
+
         new_frames.append(frame)
         prev_frames.append(frame)
-    del prev_frames[-1] #delete the last frame of the video from prev_frames
+
+    del prev_frames[-1]
     flow_video = [flow for flow, occ_mask, warped in pipe.predict(prev_frames, new_frames, batch_size=batch_size, resize=resize)]
+
+    if len(flow_video) < 1:
+        print(f'Could not open file: {args.video_filepath}')
+        sys.exit(0)
 
     return flow_video, fps
 
 
-
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument('flow_filepath', type=str, help='destination filepath of the flow image/video')
     parser.add_argument('config', type=str, nargs='?', default=None)

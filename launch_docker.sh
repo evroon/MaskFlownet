@@ -11,13 +11,13 @@ COMMAND="/bin/bash"
 while test $# -gt 0
 do
     case "$1" in
-        --run) COMMAND="run.sh"
+        --run) echo "Processing frames in:" $DATASET_DIR && mkdir -p $DATASET_DIR/output && COMMAND="./run.sh"
             ;;
     esac
     shift
 done
 
-sudo nvidia-docker run  --gpus all \
+docker run --gpus all \
                         --rm -ti \
                         --volume=$(pwd):/maskflownet:rw \
                         -v $DATASET_DIR:/data/frames \
