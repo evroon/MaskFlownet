@@ -17,10 +17,10 @@ do
     shift
 done
 
-docker run --gpus all \
-                        --rm -ti \
-                        --volume=$(pwd):/maskflownet:rw \
-                        -v $DATASET_DIR:/data/frames \
-                        --workdir=/maskflownet \
-                        --ipc=host $USER/maskflownet:latest \
-                        $COMMAND
+docker run  --gpus all \
+            --rm -ti \
+            --volume=$(pwd):/maskflownet:rw \
+            -v $DATASET_DIR:/data/frames \
+            --workdir=/maskflownet \
+            --ipc=host $USER/maskflownet:latest \
+            $COMMAND
